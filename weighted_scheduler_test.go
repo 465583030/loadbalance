@@ -22,9 +22,8 @@ func TestGcd(t *testing.T) {
 		{-10, 2, 1},
 	}
 
-	scheduler := NewWeightedRoundRobinScheduler(nil)
 	for _, c := range cases {
-		gcd := scheduler.gcd(c.a, c.b)
+		gcd := gcd(c.a, c.b)
 		if gcd != c.gcd {
 			t.Errorf("gcd(%d, %d) == %d != %d", c.a, c.b, gcd, c.gcd)
 		}
@@ -43,19 +42,18 @@ func TestGcdSlice(t *testing.T) {
 		{[]int{10, 30, 50}, 10},
 		{[]int{20, 40, 60}, 20},
 	}
-	scheduler := NewWeightedRoundRobinScheduler(nil)
 	for _, c := range cases {
-		gcd := scheduler.gcdSlice(c.slice)
+		gcd := gcdSlice(BuildNodes(c.slice))
 		if gcd != c.gcd {
 			t.Errorf("gcdSlice(%v) == %d != %d", c.slice, gcd, c.gcd)
 		}
 	}
 }
 
-func TestNext(t *testing.T) {
+func TestWeightedScheduler_Next(t *testing.T) {
 	cases := []struct {
 		weights []int
-		list    []int // 循环两次的索引列表
+		list    []int
 	}{
 		{
 			[]int{1, 1, 1},
@@ -83,13 +81,27 @@ func TestNext(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		scheduler := NewWeightedRoundRobinScheduler(c.weights)
+		scheduler := NewWeightedScheduler(BuildNodes(c.weights))
 		list := make([]int, len(c.list))
 		for i, n := 0, len(c.list); i < n; i++ {
-			list[i] = scheduler.Next()
+			list[i] = scheduler.Next().Data.(int)
 		}
 		if !reflect.DeepEqual(list, c.list) {
 			t.Errorf("weights: %v, list: %v, want %v", c.weights, list, c.list)
 		}
 	}
+
+	s := NewWeightedScheduler(BuildNodes([]int{}))
+	node := s.Next()
+	if node != nil {
+		t.Errorf("weights: []int{}, return %v, want nil", node)
+	}
 }
+
+func BenchmarkWeightedScheduler_Next(b *testing.B) {
+	s := NewWeightedScheduler(BuildNodes([]int{1, 2, 3}))
+	for i := 0; i < b.N; i++ {
+		s.Next()
+	}
+}
+
