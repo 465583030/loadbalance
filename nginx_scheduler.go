@@ -19,10 +19,12 @@ func BuildNodes(weights []int) []*Node {
 }
 
 type NginxScheduler struct {
-	nodes []*Node
+	nodes          []*Node
+	effWeightTotal int // 所有节点有效权重之和
 }
 
 func NewNginxScheduler(nodes []*Node) *NginxScheduler {
+	effWeightTotal := 0
 	for _, n := range nodes {
 		if n.Weight < 0 {
 			n.Weight = -n.Weight
@@ -32,9 +34,11 @@ func NewNginxScheduler(nodes []*Node) *NginxScheduler {
 		} else {
 			n.effective = n.Weight
 		}
+		effWeightTotal += n.effective
 	}
 	return &NginxScheduler{
-		nodes: nodes,
+		nodes:          nodes,
+		effWeightTotal: effWeightTotal,
 	}
 }
 
@@ -42,15 +46,14 @@ func NewNginxScheduler(nodes []*Node) *NginxScheduler {
 // 选出的节点的当前权重会减去所有节点的有效权重之和。
 // 对于节点间权重相差比较大的情况，NginxScheduler的选择效果比WeightedScheduler要好一些，更加均衡，但性能要差些。
 func (ns *NginxScheduler) Next() *Node {
-	total := 0 // total 记录所有节点的有效权重
 	var best *Node
 	for _, n := range ns.nodes {
 		n.curWeight += n.effective // 每次检查都增加当前权重
-		total += n.effective
 
 		if n.effective < n.Weight {
 			// 节点通了增加权重直到等于weight
 			n.effective++
+			ns.effWeightTotal++
 		}
 		if best == nil || n.curWeight > best.curWeight {
 			// 选择当前权重最大的
@@ -61,6 +64,6 @@ func (ns *NginxScheduler) Next() *Node {
 	if best == nil {
 		return nil
 	}
-	best.curWeight -= total // 被选中的减去total, 这样下次该节点被选中的概率就小了
+	best.curWeight -= ns.effWeightTotal // 被选中的减去有效权重之和, 这样下次该节点被选中的概率就小了
 	return best
 }
