@@ -45,3 +45,9 @@ BenchmarkNginxScheduler_Next-4      	100000000	        11.6 ns/op	       0 B/op	
 BenchmarkWeightedScheduler_Next-4   	300000000	         5.50 ns/op	       0 B/op	       0 allocs/op
 ```
 
+
+
+## 可视化
+
+通过 web 页面查看各负载均衡算法的选择效果 [点击](https://github.com/zhangyuchen0411/loadbalance_web)
+

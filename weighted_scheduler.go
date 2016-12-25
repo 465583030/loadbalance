@@ -1,6 +1,6 @@
 package loadbalance
 
-// 加权轮询调度
+// WeightedScheduler 加权轮询调度,每次从上次停止的地方选择权重最高的节点.
 type WeightedScheduler struct {
 	nodes     []*Node
 	curIndex  int // 当前索引值
@@ -9,6 +9,7 @@ type WeightedScheduler struct {
 	maxWeight int // 最大权重值
 }
 
+// NewWeightedScheduler 新建WeightedScheduler
 func NewWeightedScheduler(nodes []*Node) *WeightedScheduler {
 	return &WeightedScheduler{
 		nodes:     nodes,
@@ -17,6 +18,7 @@ func NewWeightedScheduler(nodes []*Node) *WeightedScheduler {
 	}
 }
 
+// Next 选择下一个权重最高的节点.
 //        ▅
 //        ▅
 //        ▅         ▅

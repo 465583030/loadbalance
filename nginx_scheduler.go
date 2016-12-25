@@ -1,12 +1,6 @@
 package loadbalance
 
-type Node struct {
-	Weight    int
-	Data      interface{}
-	effective int
-	curWeight int
-}
-
+// BuildNodes 一个辅助函数，根据权重列表生成节点列表，每个节点的Data表示其在权重列表中的索引。
 func BuildNodes(weights []int) []*Node {
 	nodes := make([]*Node, len(weights))
 	for i, w := range weights {
@@ -18,11 +12,13 @@ func BuildNodes(weights []int) []*Node {
 	return nodes
 }
 
+// NginxScheduler Nginx中使用的负载均衡算法，每次从所有节点中选择权重最高的节点，并将其权重值降低。
 type NginxScheduler struct {
 	nodes          []*Node
 	effWeightTotal int // 所有节点有效权重之和
 }
 
+// NewNginxScheduler 新建NginxScheduler
 func NewNginxScheduler(nodes []*Node) *NginxScheduler {
 	effWeightTotal := 0
 	for _, n := range nodes {
@@ -42,7 +38,7 @@ func NewNginxScheduler(nodes []*Node) *NginxScheduler {
 	}
 }
 
-// 每次调用Next都会遍历所有节点。
+// Next 每次调用Next都会遍历所有节点。
 // 选出的节点的当前权重会减去所有节点的有效权重之和。
 // 对于节点间权重相差比较大的情况，NginxScheduler的选择效果比WeightedScheduler要好一些，更加均衡，但性能要差些。
 func (ns *NginxScheduler) Next() *Node {
