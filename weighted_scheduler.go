@@ -104,3 +104,5 @@ func gcd(a, b int) int {
 	}
 	return b
 }
+
+var _ Scheduler = &WeightedScheduler{}

@@ -28,6 +28,28 @@
 
 
 
+
+示例：
+
+```go
+s := NewWeightedScheduler(BuildNodes([]int{1, 2, 3}))
+node := s.Next()
+fmt.Println(node.Data.(int))
+```
+
+并发安全的实例：
+
+```go
+s := NewSafeWeightedScheduler(BuildNodes([]int{1, 2, 3}))
+node := s.Next()
+fmt.Println(node.Data.(int))
+```
+
+
+
+
+
+
 ## NginxScheduler
 
 `NginxScheduler` nginx 上使用的负载均衡算法。
@@ -35,6 +57,26 @@
 每次调用 `Next` 方法返回的节点的权重都会减去所有节点的有效权重之和，因此对于权重值相差比较大的节点也能有较好的均衡效果。
 
 - `Next` 每次都会遍历所有节点，因此性能上有所损失。
+
+
+
+
+示例：
+
+```go
+s := NewNginxScheduler(BuildNodes([]int{1, 2, 3}))
+node := s.Next()
+fmt.Println(node.Data.(int))
+```
+
+并发安全的示例：
+
+```go
+s := NewSafeNginxScheduler(BuildNodes([]int{1, 2, 3}))
+node := s.Next()
+fmt.Println(node.Data.(int))
+```
+
 
 
 

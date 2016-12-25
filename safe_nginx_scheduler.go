@@ -1,13 +1,16 @@
 package loadbalance
 
-// NginxScheduler Nginx中使用的负载均衡算法，每次从所有节点中选择权重最高的节点，并将其权重值降低。
-type NginxScheduler struct {
+import "sync"
+
+// SafeNginxScheduler 并发安全的NginxScheduler
+type SafeNginxScheduler struct {
 	nodes          []*Node
 	effWeightTotal int // 所有节点有效权重之和
+	sync.Mutex
 }
 
-// NewNginxScheduler 新建NginxScheduler
-func NewNginxScheduler(nodes []*Node) *NginxScheduler {
+// NewSafeNginxScheduler 新建SafeNginxScheduler
+func NewSafeNginxScheduler(nodes []*Node) *SafeNginxScheduler {
 	effWeightTotal := 0
 	for _, n := range nodes {
 		if n.Weight < 0 {
@@ -20,17 +23,16 @@ func NewNginxScheduler(nodes []*Node) *NginxScheduler {
 		}
 		effWeightTotal += n.effective
 	}
-	return &NginxScheduler{
+	return &SafeNginxScheduler{
 		nodes:          nodes,
 		effWeightTotal: effWeightTotal,
 	}
 }
 
-// Next 每次调用Next都会遍历所有节点。
-// 选出的节点的当前权重会减去所有节点的有效权重之和。
-// 对于节点间权重相差比较大的情况，NginxScheduler的选择效果比WeightedScheduler要好一些，更加均衡，但性能要差些。
-func (ns *NginxScheduler) Next() *Node {
+// Next 返回下一个节点，可并发调用。
+func (ns *SafeNginxScheduler) Next() *Node {
 	var best *Node
+	ns.Lock()
 	for _, n := range ns.nodes {
 		n.curWeight += n.effective // 每次检查都增加当前权重
 
@@ -46,10 +48,12 @@ func (ns *NginxScheduler) Next() *Node {
 	}
 
 	if best == nil {
+		ns.Unlock()
 		return nil
 	}
 	best.curWeight -= ns.effWeightTotal // 被选中的减去有效权重之和, 这样下次该节点被选中的概率就小了
+	ns.Unlock()
 	return best
 }
 
-var _ Scheduler = &NginxScheduler{}
+var _ Scheduler = &SafeNginxScheduler{}
